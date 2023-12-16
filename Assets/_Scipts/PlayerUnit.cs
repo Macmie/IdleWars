@@ -11,6 +11,11 @@ public class PlayerUnit : Unit
     
     private Coroutine _actionCoroutine;
 
+    private void Awake()
+    {
+        World.Instance.AddPlayerUnitToList(this);
+    }
+
     private void Update()
     {
         if ( !_initialized)
@@ -21,7 +26,7 @@ public class PlayerUnit : Unit
 
         if (_targetUnit == null && !_isScouting)
             Scout();
-        else if (!_isChasing && !_isFighting)
+        else if (_targetUnit != null && !_isChasing && !_isFighting)
             Chase(_targetUnit);
     }
 
@@ -147,5 +152,11 @@ public class PlayerUnit : Unit
     {
         if (_spottedEnemies.Contains(enemy))
             _spottedEnemies.Remove(enemy);
+    }
+
+    protected override void Die()
+    {
+        World.Instance.RemovePlayerUnitFromList(this);
+        base.Die();
     }
 }

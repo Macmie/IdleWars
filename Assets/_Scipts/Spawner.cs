@@ -18,7 +18,7 @@ public class Spawner : MonoBehaviour
 
     IEnumerator Start()
     {
-        while (true)
+        while (World.Instance.CanSpawnFurther)
         {
             Vector3 spawnPoint = new Vector3();
             var canSpawn = TryGetSpawnPoint(out spawnPoint);
@@ -42,6 +42,7 @@ public class Spawner : MonoBehaviour
             Debug.Log($"Should Spawn unit, wait {_timer} seconds");
             yield return new WaitForSeconds(_timer);
         }
+        yield return null;
     }
 
     private bool TryGetSpawnPoint(out Vector3 spawnPoint)

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.PlayerLoop;
 
+[RequireComponent(typeof(NavMeshAgent))]
 public class Unit : MonoBehaviour
 {
     [SerializeField] private float _checkRadius;
@@ -25,7 +26,6 @@ public class Unit : MonoBehaviour
         _maxHealth *= healthMulti;
         _checkCollider.radius = _checkRadius;
         _health = _maxHealth;
-
         _initialized = true;
     }
 
@@ -51,9 +51,15 @@ public class Unit : MonoBehaviour
 
         while (true)
         {
-            while (Vector3.Distance(transform.position, point) > .1f)
+            var dist = Vector3.Distance(transform.position, point);
+            while (dist > .5f)
+            {
+                dist = Vector3.Distance(transform.position, point);
                 yield return null;
+            }
+                
             point = GetRandomPointFromSurface();
+            _agent.SetDestination(point);
         }
 
     }
@@ -63,8 +69,8 @@ public class Unit : MonoBehaviour
         var surface = World.Instance.NavSurface;
         var bounds = surface.navMeshData.sourceBounds;
 
-        float x = UnityEngine.Random.Range(bounds.min.x, bounds.max.x);
-        float z = UnityEngine.Random.Range(bounds.min.z, bounds.max.z);
+        float x = UnityEngine.Random.Range(bounds.min.x + .5f, bounds.max.x - .5f);
+        float z = UnityEngine.Random.Range(bounds.min.z + .5f, bounds.max.z - .5f);
 
         return new Vector3(x, transform.position.y, z);
 
