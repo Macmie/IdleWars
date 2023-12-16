@@ -6,16 +6,26 @@ using UnityEngine.AI;
 using UnityEngine.PlayerLoop;
 
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(Rigidbody))]
 public class Unit : MonoBehaviour
 {
-    [SerializeField] private float _checkRadius;
+    [SerializeField] protected float _checkRadius;
     [SerializeField] protected float _attackDistance;
-    [SerializeField] private LayerMask _enemyLayer;
     [SerializeField] private SphereCollider _checkCollider;
+    [SerializeField] private LayerMask _enemyLayer;
 
+    [Header("Basic skills")]
+    [SerializeField] protected float _strenght;
+    [SerializeField] protected float _maxHealth;
+
+    protected List<Unit> _spottedEnemies = new List<Unit>();
+    protected Unit _targetUnit;
+    protected bool _isChasing, _isScouting, _isFighting;
     protected NavMeshAgent _agent;
-    protected float _strenght, _maxHealth, _health;
+    protected float _health;
     protected bool _initialized;
+
+    protected Coroutine _actionCoroutine;
 
     public float Health => _health;
 
@@ -29,39 +39,60 @@ public class Unit : MonoBehaviour
         _initialized = true;
     }
 
-    public void GetDamage(float dmg)
+    //private void Update()
+    //{
+    //    if (!_initialized || _isFighting)
+    //    {
+    //        return;
+    //    }
+
+    //    CheckForEnemyToChase();
+
+    //    if (_targetUnit == null && !_isScouting)
+    //        Scout();
+    //    else if (_targetUnit != null && !_isChasing && !_isFighting)
+    //        Chase(_targetUnit);
+    //}
+
+    private void Start()
+    {
+        Scout();
+    }
+
+    public virtual void GetDamage(float dmg)
     {
         _health -= dmg;
-        if (_health < 0 )
-        {
-            Die();
-        }
+        Debug.Log($"{gameObject.name} got {dmg} dmg and new health is {_health}");
     }
 
     protected virtual void Die()
     {
         StopAllCoroutines();
-        Destroy(this);
+        Destroy(gameObject);
     }
 
     protected IEnumerator Wander()
     {
+        _isScouting = true;
         var point = GetRandomPointFromSurface();
+        point.y = transform.position.y;
         _agent.SetDestination(point);
-
-        while (true)
+        
+        while (_targetUnit == null)
         {
             var dist = Vector3.Distance(transform.position, point);
-            while (dist > .5f)
+            while (dist > 2f && _targetUnit == null)
             {
                 dist = Vector3.Distance(transform.position, point);
+                CheckForEnemyToChase();
                 yield return null;
-            }
-                
+            }   
             point = GetRandomPointFromSurface();
-            _agent.SetDestination(point);
+            point.y = transform.position.y;
+            _agent.SetDestination(point);           
         }
-
+        _isScouting = false;
+        Chase(_targetUnit);
     }
 
     private Vector3 GetRandomPointFromSurface()
@@ -69,11 +100,127 @@ public class Unit : MonoBehaviour
         var surface = World.Instance.NavSurface;
         var bounds = surface.navMeshData.sourceBounds;
 
-        float x = UnityEngine.Random.Range(bounds.min.x + .5f, bounds.max.x - .5f);
-        float z = UnityEngine.Random.Range(bounds.min.z + .5f, bounds.max.z - .5f);
+        float x = UnityEngine.Random.Range(bounds.min.x + 3, bounds.max.x - 3);
+        float z = UnityEngine.Random.Range(bounds.min.z + 3, bounds.max.z - 3);
 
         return new Vector3(x, transform.position.y, z);
 
+    }
+
+    private void CheckForEnemyToChase()
+    {
+        var enemies = Physics.OverlapSphere(transform.position, _checkRadius, _enemyLayer);
+        _spottedEnemies = new List<Unit>();
+        if (enemies.Length == 0)
+        {
+            _targetUnit = null;
+            return;
+        }
+
+        foreach (var enemy in enemies)
+        {
+            Unit enemyUnit = enemy.GetComponent<Unit>();
+            if (!_spottedEnemies.Contains(enemyUnit))
+            {
+                _spottedEnemies.Add(enemyUnit);
+            }        
+        }
+
+        if (_targetUnit == null)
+        {
+            if (_spottedEnemies.Count == 1)
+            {
+                _targetUnit = _spottedEnemies[0];
+                return;
+            }
+
+            Unit _nearestUnit = null;
+            float _nearestDistance = float.PositiveInfinity;
+
+            foreach (Unit enemy in _spottedEnemies)
+            {
+                var dist = Vector3.Distance(transform.position, enemy.transform.position);
+                if (dist < _nearestDistance)
+                {
+                    _nearestDistance = dist;
+                    _nearestUnit = enemy;
+                }
+            }
+
+            _targetUnit = _nearestUnit;
+        }
+    }
+
+    private void Chase(Unit targetUnit)
+    {
+        StopActionRoutine();
+        _actionCoroutine = StartCoroutine(RunAfterUnit(targetUnit));
+    }
+
+    IEnumerator RunAfterUnit(Unit unit)
+    {
+        var distance = Vector3.Distance(transform.position, unit.transform.position);
+        _isChasing = true;
+        while (_targetUnit != null && distance > _attackDistance)
+        {
+            _agent.SetDestination(unit.transform.position);
+            distance = Vector3.Distance(transform.position, unit.transform.position);
+            yield return null;
+            yield return null; //checking it every two frames as it is not as dynamic I guess
+        }
+        _isChasing = false;
+        if (_targetUnit == null)
+            Scout();
+        else
+            Fight();
+        yield break;
+    }
+
+    private void Fight()
+    {
+        StopActionRoutine();
+        _actionCoroutine = StartCoroutine(FightWithEnemy());
+    }
+
+    IEnumerator FightWithEnemy()
+    {
+        Debug.Log("Fighting!");
+        _isFighting = true;
+        _agent.isStopped = true;
+        while (_targetUnit != null && _targetUnit.Health > 0)
+        {
+            _targetUnit.GetDamage(_strenght);
+            yield return new WaitForSeconds(1);
+        }
+
+        _agent.isStopped = false;
+        _isFighting = false;
+        CheckForEnemyToChase();
+
+        if (_targetUnit == null)
+            Scout();
+        else
+        {
+            Chase(_targetUnit);
+        }
+        yield break;
+    }
+
+    private void Scout()
+    {
+        StopActionRoutine();
+        _actionCoroutine = StartCoroutine(Wander());
+    }
+
+    private void StopActionRoutine()
+    {
+        _isChasing = false;
+        _isFighting = false;
+        _isScouting = false;
+        if (_actionCoroutine == null)
+            return;
+        StopCoroutine(_actionCoroutine);
+        _actionCoroutine = null;
     }
 }
 

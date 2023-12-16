@@ -1,9 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using TMPro;
 using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI _timerUI;
+
+    [SerializeField] private bool _isEnemySpawner;
     [SerializeField] private Unit _unitToSpawn;
     [SerializeField] private float _strenghtMulti;
     [SerializeField] private float _healthMulti;
@@ -14,41 +20,52 @@ public class Spawner : MonoBehaviour
 
     private bool _checking;
 
+
     Vector3 _checkingPoint = new Vector3();
 
     IEnumerator Start()
     {
-        while (World.Instance.CanSpawnFurther)
+        while (true)
         {
-            Vector3 spawnPoint = new Vector3();
-            var canSpawn = TryGetSpawnPoint(out spawnPoint);
-
-            if (!canSpawn)
+            if (World.Instance.CanSpawn(_isEnemySpawner))
             {
-                _checking = true;
-                Debug.Log("Point is invalid");
-                while (!canSpawn)
+                var time = 0f;
+                while (time < _timer)
                 {
-                    canSpawn = TryGetSpawnPoint(out spawnPoint);
+                    time += Time.deltaTime;
+                    SetTimer(time);
                     yield return null;
                 }
-                Debug.Log("Found valid point");
-                _checking = false;
+
+                Vector3 spawnPoint = new Vector3();
+                var canSpawn = TryGetSpawnPoint(out spawnPoint);
+
+                if (!canSpawn)
+                {
+                    _checking = true;
+                    while (!canSpawn)
+                    {
+                        canSpawn = TryGetSpawnPoint(out spawnPoint);
+                        yield return null;
+                    }
+                    _checking = false;
+                }
+
+                var unit = Instantiate(_unitToSpawn, spawnPoint, Quaternion.identity);
+                unit.InitializeUnit(_strenghtMulti, _healthMulti);
             }
-
-            var unit = Instantiate(_unitToSpawn, spawnPoint, Quaternion.identity);
-            unit.InitializeUnit(_strenghtMulti, _healthMulti);
-
-            Debug.Log($"Should Spawn unit, wait {_timer} seconds");
-            yield return new WaitForSeconds(_timer);
+            else
+            {
+                SetTimer(0);
+                yield return null;
+            }
         }
-        yield return null;
     }
 
     private bool TryGetSpawnPoint(out Vector3 spawnPoint)
     {
         spawnPoint = new Vector3();
-        var point = Random.insideUnitCircle.normalized * _radius;
+        var point = UnityEngine.Random.insideUnitCircle.normalized * _radius;
         spawnPoint = new Vector3(point.x, 0, point.y);
         spawnPoint = transform.position + spawnPoint;
 
@@ -56,8 +73,6 @@ public class Spawner : MonoBehaviour
         {
             _checkingPoint = spawnPoint;
         }
-
-        Debug.Log($"Checking point: {spawnPoint}");
 
         if (CanSpawnAtPoint(spawnPoint))
             return true;
@@ -71,14 +86,12 @@ public class Spawner : MonoBehaviour
 
         if (colliders.Length == 0)
         {
-            Debug.Log("No colliders on point: " + point);
             return true;
         }
 
         foreach (Collider collider in colliders)
         {
             var dist = Vector3.Distance(point, collider.transform.position);
-            Debug.Log($"Found: {collider.gameObject.name} in distance: {dist}");
 
             if ( dist < 1.2f)
             {
@@ -86,6 +99,11 @@ public class Spawner : MonoBehaviour
             }
         }
         return true;
+    }
+
+    private void SetTimer(float time)
+    {
+        _timerUI.text = "Time to next enemy spawn: " + time;
     }
 
     private void OnDrawGizmos()
