@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
+    [SerializeField] private UnitType _unitType;
     [SerializeField] private TextMeshProUGUI _timerUI;
 
     [SerializeField] private bool _isEnemySpawner;
@@ -19,12 +20,14 @@ public class Spawner : MonoBehaviour
     [SerializeField] private LayerMask _spawnedUnitLayerMask;
 
     private bool _checking;
-
+    private UnitPooler _pooler;
 
     Vector3 _checkingPoint = new Vector3();
 
+
     IEnumerator Start()
     {
+        _pooler = UnitPooler.Instance;
         while (true)
         {
             if (World.Instance.CanSpawn(_isEnemySpawner))
@@ -51,8 +54,9 @@ public class Spawner : MonoBehaviour
                     _checking = false;
                 }
 
-                var unit = Instantiate(_unitToSpawn, spawnPoint, Quaternion.identity);
-                unit.InitializeUnit(_strenghtMulti, _healthMulti);
+                var unit = _pooler.SpawnFromPool(_unitType, spawnPoint);
+                unit.InitializeUnit(_strenghtMulti, _healthMulti, _pooler, _unitType);
+                unit.OnSpawnedObject();
             }
             else
             {

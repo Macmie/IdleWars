@@ -3,9 +3,10 @@ using UnityEngine;
 
 public class EnemyUnit : Unit
 {
-    private void Awake()
+    public override void OnSpawnedObject()
     {
         World.Instance.AddEnemyToList();
+        base.OnSpawnedObject();
     }
     public override void GetDamage(float dmg)
     {

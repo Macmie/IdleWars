@@ -1003,6 +1003,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &732129212
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 732129213}
+  - component: {fileID: 732129214}
+  m_Layer: 0
+  m_Name: UnitPooler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &732129213
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732129212}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 611.99194, y: 183.36649, z: -21.676788}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1629210984}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &732129214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 732129212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e66d15044db1a234281520a5bf58c92e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _poolList:
+  - UnitType: 0
+    UnitPrefab: {fileID: 1026682270262322062, guid: f0f33edfd7079ef43aadabdf1d494e47, type: 3}
+    PoolSize: 3
+  - UnitType: 1
+    UnitPrefab: {fileID: 7412984802724751132, guid: 63808bd734e5df74495e75486aeb0c8b, type: 3}
+    PoolSize: 3
 --- !u!1 &747015763
 GameObject:
   m_ObjectHideFlags: 0
@@ -1741,6 +1792,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87e4686138df04f4fa63b03a13fa4fab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _unitType: 1
   _timerUI: {fileID: 409885611}
   _isEnemySpawner: 1
   _unitToSpawn: {fileID: 7412984802724751132, guid: 63808bd734e5df74495e75486aeb0c8b, type: 3}
@@ -2469,6 +2521,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 747015764}
+  - {fileID: 732129213}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1699682539
@@ -2518,6 +2571,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87e4686138df04f4fa63b03a13fa4fab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _unitType: 0
   _timerUI: {fileID: 336753173}
   _isEnemySpawner: 0
   _unitToSpawn: {fileID: 1026682270262322062, guid: f0f33edfd7079ef43aadabdf1d494e47, type: 3}

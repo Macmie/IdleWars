@@ -5,9 +5,10 @@ using UnityEngine;
 
 public class PlayerUnit : Unit
 {
-    private void Awake()
+    public override void OnSpawnedObject()
     {
         World.Instance.AddPlayerUnitToList();
+        base.OnSpawnedObject();
     }
 
     public override void GetDamage(float dmg)

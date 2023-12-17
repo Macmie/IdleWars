@@ -7,7 +7,7 @@ using UnityEngine.PlayerLoop;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Rigidbody))]
-public class Unit : MonoBehaviour
+public class Unit : MonoBehaviour, IPooledObject
 {
     [SerializeField] protected float _checkRadius;
     [SerializeField] protected float _attackDistance;
@@ -17,6 +17,9 @@ public class Unit : MonoBehaviour
     [Header("Basic skills")]
     [SerializeField] protected float _strenght;
     [SerializeField] protected float _maxHealth;
+
+    private UnitPooler _pooler;
+    private UnitType _unitType;
 
     protected List<Unit> _spottedEnemies = new List<Unit>();
     protected Unit _targetUnit;
@@ -29,32 +32,19 @@ public class Unit : MonoBehaviour
 
     public float Health => _health;
 
-    public void InitializeUnit(float strMulti, float healthMulti)
+    public void InitializeUnit(float strMulti, float healthMulti, UnitPooler pooler, UnitType type)
     {
         _agent = GetComponent<NavMeshAgent>();
         _strenght *= strMulti;
         _maxHealth *= healthMulti;
         _checkCollider.radius = _checkRadius;
         _health = _maxHealth;
+        _pooler = pooler;
+        _unitType = type;
         _initialized = true;
     }
 
-    //private void Update()
-    //{
-    //    if (!_initialized || _isFighting)
-    //    {
-    //        return;
-    //    }
-
-    //    CheckForEnemyToChase();
-
-    //    if (_targetUnit == null && !_isScouting)
-    //        Scout();
-    //    else if (_targetUnit != null && !_isChasing && !_isFighting)
-    //        Chase(_targetUnit);
-    //}
-
-    private void Start()
+    public virtual void OnSpawnedObject()
     {
         Scout();
     }
@@ -62,14 +52,13 @@ public class Unit : MonoBehaviour
     public virtual void GetDamage(float dmg)
     {
         _health -= dmg;
-        Debug.Log($"{gameObject.name} got {dmg} dmg and new health is {_health}");
     }
 
     protected virtual void Die()
     {
         StopAllCoroutines();
         CurrencyManager.Instance.UnitDeath();
-        Destroy(gameObject);
+        _pooler.PutUnitBackToPool(_unitType, this);
     }
 
     protected IEnumerator Wander()
@@ -162,7 +151,7 @@ public class Unit : MonoBehaviour
     {
         var distance = Vector3.Distance(transform.position, unit.transform.position);
         _isChasing = true;
-        while (_targetUnit != null && distance > _attackDistance)
+        while (_targetUnit != null && distance > _attackDistance * .9f)
         {
             _agent.SetDestination(unit.transform.position);
             distance = Vector3.Distance(transform.position, unit.transform.position);
@@ -170,7 +159,11 @@ public class Unit : MonoBehaviour
             yield return null; //checking it every two frames as it is not as dynamic I guess
         }
         _isChasing = false;
-        if (_targetUnit == null)
+
+        if (!_targetUnit.gameObject.activeSelf)
+            _targetUnit = null;
+
+        if (_targetUnit == null )
             Scout();
         else
             Fight();
@@ -185,7 +178,6 @@ public class Unit : MonoBehaviour
 
     IEnumerator FightWithEnemy()
     {
-        Debug.Log("Fighting!");
         _isFighting = true;
         _agent.isStopped = true;
         while (_targetUnit != null && _targetUnit.Health > 0)
