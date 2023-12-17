@@ -68,6 +68,7 @@ public class Unit : MonoBehaviour
     protected virtual void Die()
     {
         StopAllCoroutines();
+        CurrencyManager.Instance.UnitDeath();
         Destroy(gameObject);
     }
 

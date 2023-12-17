@@ -29,10 +29,10 @@ public class Spawner : MonoBehaviour
         {
             if (World.Instance.CanSpawn(_isEnemySpawner))
             {
-                var time = 0f;
-                while (time < _timer)
+                var time = _timer;
+                while (time > 0)
                 {
-                    time += Time.deltaTime;
+                    time -= Time.deltaTime;
                     SetTimer(time);
                     yield return null;
                 }
@@ -56,7 +56,7 @@ public class Spawner : MonoBehaviour
             }
             else
             {
-                SetTimer(0);
+                SetTimer(_timer);
                 yield return null;
             }
         }
@@ -103,7 +103,7 @@ public class Spawner : MonoBehaviour
 
     private void SetTimer(float time)
     {
-        _timerUI.text = "Time to next enemy spawn: " + time;
+        _timerUI.text = $"Time to next unit spawn: {time:F}";
     }
 
     private void OnDrawGizmos()
@@ -116,4 +116,9 @@ public class Spawner : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, _radius);
     }
+
+    public void IncreaseStrModifier() => _strenghtMulti *= 1.1f;
+
+    public void IncreaseHealthMulti() => _healthMulti *= 1.1f;
+
 }

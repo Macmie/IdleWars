@@ -85,4 +85,6 @@ public class World : MonoBehaviour
             _canEnemySpawnUI.text = "Can Enemy Spawn: " + canSpawn;
         }
     }
+
+    public void IncreaseMaxPlayerUnits() => _maxSummonedUnits += 1;
 }
